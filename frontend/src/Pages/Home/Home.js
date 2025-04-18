@@ -15,8 +15,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import Analytics from "./Analytics";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+
 
 const Home = () => {
+  
   const navigate = useNavigate();
 
   const toastOptions = {
@@ -69,6 +74,42 @@ const Home = () => {
 
     avatarFunc();
   }, [navigate]);
+
+  const generatePDF = () => {
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      alert("No transactions to export.");
+      return;
+    }
+  console.log("tra",transactions);
+    const doc = new jsPDF();
+  
+    doc.setFontSize(18);
+    doc.text("Transaction Report", 14, 22);
+  
+    const tableColumn = ["Title", "Amount", "Category", "Type", "Date", "Description"];
+    const tableRows = [];
+  
+    transactions.forEach((txn) => {
+      const txnData = [
+        txn.title || "N/A",
+        txn.amount ?? "N/A",
+        txn.category || "N/A",
+        txn.transactionType || "N/A",
+        txn.date ? new Date(txn.date).toLocaleDateString() : "N/A",
+        txn.description || "N/A",
+      ];
+      tableRows.push(txnData);
+    });
+  
+    autoTable(doc,{
+      startY: 30,
+      head: [tableColumn],
+      body: tableRows,
+      styles: { fontSize: 10 },
+    });
+  
+    doc.save("transactions_report.pdf");
+  };
 
   const [values, setValues] = useState({
     title: "",
@@ -154,7 +195,7 @@ const Home = () => {
           endDate: endDate,
           type: type,
         });
-        console.log(data);
+        console.log(data.transactions);
   
         setTransactions(data.transactions);
   
@@ -387,6 +428,10 @@ const Home = () => {
               <Button variant="primary" onClick={handleReset}>
                 Reset Filter
               </Button>
+              <Button variant="success" onClick={generatePDF} className="ms-2">
+                 Download PDF
+              </Button>
+
             </div>
             {view === "table" ? (
               <>
